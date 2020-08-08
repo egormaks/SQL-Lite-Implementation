@@ -1,17 +1,12 @@
-# SQL-Lite-Implementation
-This project involves writing a clone of SQL lite from scratch in C.
-SQL-Lite follows the following logical pathway to execute a query:  
-  Tokenizer -> Parser -> Code Generator -> Virtual Machine -> B-Tree -> Pager -> OS Interface
-We will implement all stages of a query.
+# About this project:
+	I'm working on this project to gain a better understanding of databases from the back-end to the front-end and to answer questions like the following:
+		"How and where is data stored in memory or on a disk?"
+		"Why is there only one primary key in a table?"
+		"How does rolling back a transaction work?"
+		"How are indices formated?"
+		"How are prepared statements and meta commands stored and processed?"
+	To do this, this project involves writing the SQLite database language from scratch (in C). I am responsible for implementing all aspects of a 
+	database and am responsible for implementing the answers to the above questions. 
+# How to use:
 
-The tokenizer -> parser -> code generator chain is the "front end". It takes a SQL query and outputs virtual machine byte-code. 
-
-The virtual machine -> b-tree -> pager -> OS interface is the back-end. 
-	Virtual Machine:
-		Takes bytecode and then performs operations on one or more tables, which are stored in a B-Tree. 
-	B-Trees:
-		Consist of many nodes, each node being one page length. The B-tree retrieves a page from disk or save it back to disk via pager.
-	Pager:
-		Receives commands to read/write pages of data. 
-	OS-interface:
-		Differs based on the OS that sql lite is compiled for. 
+# Limitations of my language:
