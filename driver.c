@@ -40,7 +40,12 @@ ExecuteResult executeSelect(Statement *, Table *);
 ExecuteResult executeInsert(Statement *, Table *);
 
 int main(int argc, char* argv[]) {
-	Table * table = newTable(); 
+	if (argc < 2) { 
+		printf("Must supply a database filename.\n");
+		exit(EXIT_FAILURE);
+	}
+	char * filename = argv[1];
+	Table * table = dbOpen(filename); 
 	InputBuffer ib = createInputBuffer();
 	time_t t;
 	time(&t);
@@ -98,7 +103,7 @@ void printPrompt() {
 MetaCommandResult doMetaCommand(InputBuffer ib, Table * table) { 
 	if (strcmp(ib->buffer, ".exit") == 0) { 
 		deleteInputBuffer(ib);
-		freeTable(table);
+		dbClose(table);
 		exit(0);
 	} else { 
 		return META_COMMAND_UNRECOGNIZED_COMMAND;
@@ -113,7 +118,6 @@ PrepareResult prepareStatement(InputBuffer ib, Statement * statement) {
 		char * username = strtok(NULL, " ");
 		char * email = strtok(NULL, " ");
 		int id = atoi(idString);
-
 		if (idString == NULL || username == NULL || email == NULL) 
 			return PREPARE_SYNTAX_ERROR;
 		if (strlen(username) > COLUMN_USERNAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE) 

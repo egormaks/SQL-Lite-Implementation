@@ -6,5 +6,5 @@ OBJ = Table.c InputBuffer.c Driver.c
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-hellomake: $(OBJ)
+exec: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
