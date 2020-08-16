@@ -16,12 +16,11 @@ void deleteInputBuffer(InputBuffer ib) {
 }
 
 void readInput(InputBuffer ib) { 
-	ssize_t bytesRead = getline(&(ib->buffer),&(ib->buffer_length), stdin);
+	ssize_t bytesRead = getline(&(ib->buffer), &(ib->buffer_length), stdin);
 	if (bytesRead <= 0) {
 		printf("Error reading input\n");
 		exit(1);
 	} 
-
 	ib->input_length = bytesRead - 1;
 	ib->buffer[bytesRead - 1] = 0;
 }	
