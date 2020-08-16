@@ -18,7 +18,9 @@ typedef enum {
 typedef enum {
   PREPARE_SUCCESS,
   PREPARE_SYNTAX_ERROR,
-  PREPARE_UNRECOGNIZED_STATEMENT
+  PREPARE_UNRECOGNIZED_STATEMENT,
+  PREPARE_STRING_TOO_LONG,
+  PREPARE_NEGATIVE_ID
  } PrepareResult;
 
 typedef enum { 
@@ -31,7 +33,7 @@ typedef struct {
 } Statement;
 
 void printPrompt();
-MetaCommandResult doMetaCommand(InputBuffer);
+MetaCommandResult doMetaCommand(InputBuffer, Table *);
 PrepareResult prepareStatement();
 ExecuteResult executeStatement(Statement * statement, Table *);
 ExecuteResult executeSelect(Statement *, Table *);
@@ -51,7 +53,7 @@ int main(int argc, char* argv[]) {
 		readInput(ib);
 
 		if (ib->buffer[0] == '.') { 
-			switch (doMetaCommand(ib)) { 
+			switch (doMetaCommand(ib, table)) { 
 				case (META_COMMAND_SUCCESS):
 					continue;
 				case (META_COMMAND_UNRECOGNIZED_COMMAND):
@@ -70,6 +72,12 @@ int main(int argc, char* argv[]) {
 			case (PREPARE_UNRECOGNIZED_STATEMENT):
 				printf("Unrecognized keyword at start of '%s'\n", ib->buffer);
 				continue;
+			case (PREPARE_STRING_TOO_LONG):
+				printf("String is too long.\n");
+				continue;
+			case (PREPARE_NEGATIVE_ID):
+				printf("Negative ids are forbidden.\n");
+				continue;
 		}
 		
 		switch(executeStatement(&statement, table)) {
@@ -87,8 +95,10 @@ void printPrompt() {
 	printf("db > ");
 }
 
-MetaCommandResult doMetaCommand(InputBuffer ib) { 
+MetaCommandResult doMetaCommand(InputBuffer ib, Table * table) { 
 	if (strcmp(ib->buffer, ".exit") == 0) { 
+		deleteInputBuffer(ib);
+		freeTable(table);
 		exit(0);
 	} else { 
 		return META_COMMAND_UNRECOGNIZED_COMMAND;
@@ -98,12 +108,23 @@ MetaCommandResult doMetaCommand(InputBuffer ib) {
 PrepareResult prepareStatement(InputBuffer ib, Statement * statement) { 
 	if (strncmp(ib->buffer, "insert", 6) == 0) { 
 		statement->type = STATEMENT_INSERT;
-		int argsAssigned = sscanf(
-			ib->buffer, "insert %d %s %s", &(statement->row_to_insert.id),
-			statement->row_to_insert.username, statement->row_to_insert.email);
-		if (argsAssigned < 3) { 
+		char * keyword = strtok(ib->buffer, " ");
+		char * idString = strtok(NULL, " ");
+		char * username = strtok(NULL, " ");
+		char * email = strtok(NULL, " ");
+		int id = atoi(idString);
+
+		if (idString == NULL || username == NULL || email == NULL) 
 			return PREPARE_SYNTAX_ERROR;
-		}
+		if (strlen(username) > COLUMN_USERNAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE) 
+			return PREPARE_STRING_TOO_LONG;
+		if (id < 0)
+			return PREPARE_NEGATIVE_ID;
+
+		statement->row_to_insert.id = id;
+		strcpy(statement->row_to_insert.username, username);
+		strcpy(statement->row_to_insert.email, email);
+
 		return PREPARE_SUCCESS;
 	}
 	if (strcmp(ib->buffer, "select") == 0) { 
