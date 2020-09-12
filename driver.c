@@ -32,6 +32,8 @@ typedef struct {
   Row row_to_insert; //only used by insert statement
 } Statement;
 
+extern uint32_t LEAF_NODE_MAX_CELLS;
+
 void printPrompt();
 MetaCommandResult doMetaCommand(InputBuffer, Table *);
 PrepareResult prepareStatement();
@@ -51,8 +53,6 @@ int main(int argc, char* argv[]) {
 	time(&t);
 	printf("Egor's SQLite version 1.0 %s\n", ctime(&t));
 	printf("Enter \".help\" for usage hints.\n");
-	printf("Connected to a transient in-memory database.\n");
-	printf("Use \"open FILENAME\" to reopen on a persistent database\n");
 	while (1) { 
 		printPrompt();
 		readInput(ib);
@@ -148,13 +148,13 @@ ExecuteResult executeStatement(Statement * statement, Table * table) {
 }		
 
 ExecuteResult executeInsert(Statement * statement, Table * table) { 
-	if (canBeInsertedInto(table)) { 
+	void * node = getPage(table->pager, table->root_page_num);
+	if (*leafNodeNumCells(node) >= LEAF_NODE_MAX_CELLS) { 
 		return EXECUTE_TABLE_FULL;
 	}
 	Row * row_to_insert = &(statement->row_to_insert);
 	Cursor * cursor = tableEnd(table);
-	serializeRow(row_to_insert, cursorValue(cursor));
-	table->num_rows += 1;
+	leafNodeInsert(cursor, row_to_insert->id, row_to_insert);
 	free(cursor);
 	return EXECUTE_SUCCESS;	
 }
