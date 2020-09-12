@@ -152,17 +152,22 @@ ExecuteResult executeInsert(Statement * statement, Table * table) {
 		return EXECUTE_TABLE_FULL;
 	}
 	Row * row_to_insert = &(statement->row_to_insert);
-	serializeRow(row_to_insert, rowSlot(table, table->num_rows));
+	Cursor * cursor = tableEnd(table);
+	serializeRow(row_to_insert, cursorValue(cursor));
 	table->num_rows += 1;
+	free(cursor);
 	return EXECUTE_SUCCESS;	
 }
 
 ExecuteResult executeSelect(Statement * statement, Table * table) { 
+	Cursor * cursor = tableStart(table);
 	Row row;
-	for (uint32_t i = 0; i < table->num_rows; i++) { 
-		deserializeRow(rowSlot(table, i), &row);
+	while (!(cursor->end_of_table)) { 
+		deserializeRow(cursorValue(cursor), &row);
 		printRow(&row);
+		cursorAdvance(cursor);
 	}
+	free(cursor);
 	return EXECUTE_SUCCESS;
 }
 
