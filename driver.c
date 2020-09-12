@@ -6,8 +6,10 @@
 #include "InputBuffer.h"
 #include "Table.h"
 
-typedef enum { EXECUTE_SUCCESS, 
-	EXECUTE_TABLE_FULL 
+typedef enum { 
+	EXECUTE_SUCCESS, 
+	EXECUTE_TABLE_FULL,
+	EXECUTE_DUPLICATE_KEY 
 } ExecuteResult;
 
 typedef enum {
@@ -92,6 +94,9 @@ int main(int argc, char* argv[]) {
 			case (EXECUTE_TABLE_FULL):
 				printf("Error: Table full.\n");
 				break;
+			case (EXECUTE_DUPLICATE_KEY):
+				printf("Error: Cannot insert duplicate key.\n");
+				break;
 		}
 	}
 }
@@ -149,11 +154,19 @@ ExecuteResult executeStatement(Statement * statement, Table * table) {
 
 ExecuteResult executeInsert(Statement * statement, Table * table) { 
 	void * node = getPage(table->pager, table->root_page_num);
-	if (*leafNodeNumCells(node) >= LEAF_NODE_MAX_CELLS) { 
+	uint32_t num_cells = (*leafNodeNumCells(node));
+	if (num_cells >= LEAF_NODE_MAX_CELLS) { 
 		return EXECUTE_TABLE_FULL;
 	}
 	Row * row_to_insert = &(statement->row_to_insert);
-	Cursor * cursor = tableEnd(table);
+	uint32_t key_to_insert = row_to_insert->id;
+	Cursor * cursor = tableFind(table, key_to_insert);
+	if (cursor->cell_num < num_cells) { 
+		uint32_t key_at_index = *leafNodeKey(node, cursor->cell_num);
+		if (key_at_index == key_to_insert)
+			return EXECUTE_DUPLICATE_KEY;
+	}
+
 	leafNodeInsert(cursor, row_to_insert->id, row_to_insert);
 	free(cursor);
 	return EXECUTE_SUCCESS;	

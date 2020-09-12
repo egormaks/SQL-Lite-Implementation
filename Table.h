@@ -52,7 +52,7 @@ void pagerFlush(Pager * pager, uint32_t page_num);
 void printRow(Row *);
 int canBeInsertedInto(Table * table);
 Cursor * tableStart(Table * table);
-Cursor * tableEnd(Table * table);
+Cursor * tableFind(Table * table, uint32_t key);
 void cursorAdvance(Cursor * cursor);
 uint32_t * leafNodeNumCells(void * node);
 uint32_t * leafNodeCell(void * node, uint32_t cell_num);
@@ -60,5 +60,7 @@ uint32_t * leafNodeKey(void * node, uint32_t cell_num);
 uint32_t * leafNodeValue(void * node, uint32_t cell_num);
 void initializeLeafNode(void * node);
 void leafNodeInsert(Cursor * cursor, uint32_t key, Row * value);
-
+NodeType getNodeType(void * node);
+void setNodeType(void * node, NodeType type);
+Cursor * leafNodeFind(Table * table, uint32_t page_num, uint32_t key);
 #endif

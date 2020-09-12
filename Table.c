@@ -171,16 +171,15 @@ Cursor * tableStart(Table * table) {
     return cursor;
 }
 
-Cursor * tableEnd(Table * table) { 
-    Cursor * cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->page_num = table->root_page_num;
-
+Cursor * tableFind(Table * table, uint32_t key) { 
+    uint32_t root_page_num = table->root_page_num;
     void * root_node = getPage(table->pager, table->root_page_num);
-    uint32_t num_cells = *leafNodeNumCells(root_node);
-    cursor->cell_num = num_cells;
-    cursor->end_of_table = true;
-    return cursor;
+    if (getNodeType(root_node) == NODE_LEAF) { 
+        return leafNodeFind(table, root_page_num, key);
+    } else { 
+        printf("Cannot search internal node yet.");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void cursorAdvance(Cursor * cursor) {  
@@ -214,6 +213,7 @@ uint32_t * leafNodeValue(void * node, uint32_t cell_num){
 }
 
 void initializeLeafNode(void * node) {
+    setNodeType(node, NODE_LEAF);
     *leafNodeNumCells(node) = 0;
 }
 
@@ -233,4 +233,37 @@ void leafNodeInsert(Cursor * cursor, uint32_t key, Row * value) {
     *(leafNodeNumCells(node)) += 1;
     *(leafNodeKey(node, cursor->cell_num)) = key;
     serializeRow(value, leafNodeValue(node, cursor->cell_num));
+}
+
+NodeType getNodeType(void * node) { 
+    uint8_t val = *((uint8_t*)(node + NODE_TYPE_OFFSET));
+    return (NodeType) val;
+}
+void setNodeType(void * node, NodeType type) { 
+    uint8_t val = type;
+    *((uint8_t*)(node + NODE_TYPE_OFFSET)) = val;
+}
+
+Cursor * leafNodeFind(Table * table, uint32_t page_num, uint32_t key) { 
+    void * node = getPage(table->pager, page_num);
+    Cursor * cursor = malloc(sizeof(Cursor));
+    uint32_t num_cells = *leafNodeNumCells(node);
+    cursor->table = table;
+    cursor->page_num = page_num;
+    uint32_t min_index = 0;
+    uint32_t past_max = num_cells;
+    while (past_max != min_index) { 
+        uint32_t index = (min_index + past_max) / 2;
+        uint32_t key_at_index = *leafNodeKey(node, index);
+        if (key == key_at_index) { 
+            cursor->cell_num = index;
+            return cursor;
+        } else if (key < key_at_index) { 
+            past_max = index;
+        } else { 
+            min_index = index + 1;
+        }
+    }
+    cursor->cell_num = min_index;
+    return cursor;
 }
